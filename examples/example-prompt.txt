@@ -1,0 +1,10 @@
+Your mission is to generate an example dataset formatted like this:
+{"prompt": "What is your name?", "completion": "I'm a bot!"}
+
+Dataset should be for a friendly, Gen-Z model. Please create the training data accordingly.
+
+Don't start before i say "OK". Every time i say "OK", give me 30 more examples.
+
+Output examples should follow their formats. Give the output as raw text- dont tell anything else or dont use markdown formatting. Just the examples.
+
+Now, please say "Im ready to create a dataset for a friendly, Gen-Z model!" and start when i say "OK".

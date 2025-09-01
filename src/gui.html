@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DataSeek</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: "DM Sans", sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #F7F4EA;
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            color: #C96868;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .logo {
+            width: 50px;
+            height: 50px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #C96868;
+        }
+        textarea, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #BBDCE5;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #A3DC9A;
+        }
+        textarea {
+            height: 150px;
+            resize: vertical;
+            font-family: monospace;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .number-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .number-input input {
+            width: 80px;
+            text-align: center;
+        }
+        button {
+            background: #A3DC9A;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #8BC986;
+        }
+        .start-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .stop-btn {
+            background: #C96868;
+        }
+        .stop-btn:hover {
+            background: #B85555;
+        }
+        .file-input {
+            margin-bottom: 10px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #BBDCE5;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+        .file-label:hover {
+            background: #A8CDD8;
+        }
+        input[type="checkbox"] {
+            transform: scale(1.2);
+            margin-right: 5px;
+            accent-color: #A3DC9A;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #F7F4EA;
+            border: 2px solid #BBDCE5;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <img src="https://raw.githubusercontent.com/MYusufY/dataseek/src/logo.png" alt="DataSeek" class="logo">
+            DataSeek
+        </h1>
+        
+        <div class="section">
+            <label>System Prompt:</label>
+            <textarea id="systemPrompt" placeholder="Enter your system prompt for DeepSeek..."></textarea>
+        </div>
+        
+        <div class="section">
+            <label>Training Data (JSON) - Optional:</label>
+            <div class="file-input">
+                <input type="file" id="fileInput" accept=".json" onchange="loadFile()">
+                <label for="fileInput" class="file-label">Import JSON File</label>
+            </div>
+            <textarea id="trainingData" placeholder="Paste your JSON training data here (optional)..."></textarea>
+        </div>
+        
+        <div class="controls">
+            <div class="checkbox-group">
+                <input type="checkbox" id="repeatCount" onchange="toggleCheckbox('repeatCount')">
+                <label for="repeatCount">Repeat Count:</label>
+                <div class="number-input">
+                    <input type="number" id="repeatValue" value="5" min="1" max="100">
+                </div>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="exampleCount" onchange="toggleCheckbox('exampleCount')">
+                <label for="exampleCount">Example Count:</label>
+                <div class="number-input">
+                    <input type="number" id="exampleValue" value="30" min="1" max="1000">
+                </div>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="untilStop" onchange="toggleCheckbox('untilStop')">
+                <label for="untilStop">Until I Stop</label>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="start-btn" onclick="startProcess()" id="startBtn" style="flex: 1;">Start DataSeek</button>
+            <button class="start-btn stop-btn" onclick="stopProcess()" id="stopBtn" style="flex: 1; display: none;">Stop</button>
+        </div>
+        
+        <div class="status" id="status">Ready to start...</div>
+    </div>
+
+    <script>
+        document.getElementById('repeatCount').checked = true;
+        
+        function toggleCheckbox(selected) {
+            const checkboxes = ['repeatCount', 'exampleCount', 'untilStop'];
+            checkboxes.forEach(id => {
+                if (id !== selected) {
+                    document.getElementById(id).checked = false;
+                }
+            });
+        }
+        
+        function loadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('trainingData').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        function startProcess() {
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const trainingData = document.getElementById('trainingData').value;
+            const repeatCount = document.getElementById('repeatCount').checked;
+            const exampleCount = document.getElementById('exampleCount').checked;
+            const untilStop = document.getElementById('untilStop').checked;
+            const repeatValue = parseInt(document.getElementById('repeatValue').value);
+            const exampleValue = parseInt(document.getElementById('exampleValue').value);
+            
+            if (!systemPrompt.trim()) {
+                alert('Please enter a system prompt');
+                return;
+            }
+            
+            if (!repeatCount && !exampleCount && !untilStop) {
+                alert('Please select a mode');
+                return;
+            }
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('status').textContent = 'Starting process...';
+            
+            let mode = 'repeat';
+            if (exampleCount) mode = 'example';
+            if (untilStop) mode = 'until_stop';
+            
+            const config = {
+                systemPrompt: systemPrompt,
+                trainingData: trainingData,
+                mode: mode,
+                count: repeatCount ? repeatValue : exampleValue
+            };
+            
+            pywebview.api.start_datasetify(config);
+        }
+        
+        function stopProcess() {
+            pywebview.api.stop_process();
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+        
+        function resetButtons() {
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+    </script>
+</body>
+</html>
