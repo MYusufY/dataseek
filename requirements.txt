@@ -1,0 +1,2 @@
+deepseekr==0.1.0
+pywebview==4.3.3
