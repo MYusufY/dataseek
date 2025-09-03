@@ -3,6 +3,7 @@ import json
 import os
 from deepseekr import DeepSeek
 import threading
+import time
 
 class DataSeekAPI:
     def __init__(self):
@@ -28,16 +29,52 @@ class DataSeekAPI:
         if self.window:
             self.window.evaluate_js('resetButtons()')
     
+    def _initialize_deepseek(self):
+        self.update_status("Initializing DeepSeek...")
+        self.deepseek = DeepSeek(chrome_path="C:/Users/Yusuf/Downloads/chrome-win64/chrome-win64/chrome.exe")
+
+    def _send_with_retry(self, prompt, max_retries=10, config=None, training_data=None):
+        for attempt in range(max_retries):
+            if self.stop_flag:
+                return None
+            
+            try:
+                response = self.deepseek.send_prompt(prompt)
+                
+                if self.deepseek._is_server_busy():
+                    raise Exception("Server is busy")
+                    
+                return response
+            except Exception as e:
+                error_msg = str(e)
+                if (("Server is busy" in error_msg or self.deepseek._is_server_busy() or 
+                    "Failed to get the latest reply" in error_msg) and attempt < max_retries - 1):
+                    self.update_status(f"Server busy/error, creating new chat and retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(3)
+                    try:
+                        self.deepseek.new_chat()
+                        if config is not None:
+                            self.deepseek.send_prompt(config['systemPrompt'])
+                            if training_data:
+                                last_30 = training_data[-30:] if len(training_data) > 30 else training_data
+                                examples_text = "\n".join([json.dumps(item, ensure_ascii=False) for item in last_30])
+                                self.deepseek.send_prompt(examples_text)
+                    except:
+                        self.update_status("Error during chat reset, continuing retry...")
+                    continue
+                else:
+                    raise e
+        return None
+    
     def _process_dataseek(self, config):
         try:
-            self.update_status("Initializing DeepSeek...")
-            self.deepseek = DeepSeek(chrome_path="/Applications/Chrome.app/Contents/MacOS/Google Chrome")
+            self._initialize_deepseek()
             
             if self.stop_flag:
                 return
             
             self.update_status("Sending system prompt to DeepSeek...")
-            system_response = self.deepseek.send_prompt(config['systemPrompt'])
+            system_response = self._send_with_retry(config['systemPrompt'], config=config, training_data=[])
             print(f"System Response: {system_response}")
             
             if self.stop_flag:
@@ -73,7 +110,7 @@ class DataSeekAPI:
                 self.update_status("Sending last 30 examples to DeepSeek...")
                 last_30 = training_data[-30:] if len(training_data) > 30 else training_data
                 examples_text = "\n".join([json.dumps(item, ensure_ascii=False) for item in last_30])
-                self.deepseek.send_prompt(examples_text)
+                self._send_with_retry(examples_text, config=config, training_data=training_data)
             else:
                 self.update_status("No training data provided, starting with empty dataset...")
             
@@ -97,7 +134,10 @@ class DataSeekAPI:
                 else:
                     self.update_status(f"Iteration {i}/{iterations}")
                 
-                response = self.deepseek.send_prompt("OK")
+                response = self._send_with_retry("OK", config=config, training_data=training_data)
+                if response is None:
+                    continue
+                
                 print(f"Response {i}: {response}")
                 
                 try:
